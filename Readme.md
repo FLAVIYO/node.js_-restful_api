@@ -12,7 +12,7 @@ This is a Node.js RESTful API built with TypeScript and MongoDB. The project is 
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/invicta-backend-assignment.git
+   git clone https://github.com/FLAVIYO/node.js_-restful_api.git
    cd invicta-backend-assignment
 
 
