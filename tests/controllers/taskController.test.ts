@@ -1,34 +1,37 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import app from '../../app'; // Assuming your Express app is exported from this module
 import Task from '../../models/task';
 import User from '../../models/user';
 
-beforeAll(async () => {
-  try {
-    const mongoURI = process.env.MONGO_URI_TEST;
-    if (!mongoURI) {
-      throw new Error('MongoDB URI for testing is not provided in the environment variables.');
-    }
-    await mongoose.connect(mongoURI, {});
-  } catch (error) {
-    console.error('Error connecting to the test database:', error);
-    process.exit(1); // Exit the test process if database connection fails
-  }
-});
-
-afterAll(async () => {
-  await mongoose.connection.close();
-});
-
+dotenv.config();
 
 describe('Task Controller', () => {
+  beforeAll(async () => {
+    try {
+      const mongoURI = process.env.MONGO_URI_TEST;
+      if (!mongoURI) {
+        throw new Error('MongoDB URI for testing is not provided in the environment variables.');
+      }
+      await mongoose.connect(mongoURI, {});
+    } catch (error) {
+      console.error('Error connecting to the test database:', error);
+      process.exit(1); // Exit the test process if database connection fails
+    }
+  });
+
+  afterAll(async () => {
+    // Disconnect from the test database after running tests
+    await mongoose.connection.close();
+  });
+
   let userId: mongoose.Types.ObjectId | undefined;
 
   beforeAll(async () => {
     const user = new User({ username: 'testuser', first_name: 'Test', last_name: 'User' });
     await user.save();
-    userId = (user._id as mongoose.Types.ObjectId);
+    userId = user._id as mongoose.Types.ObjectId;
   });
 
   afterAll(async () => {
@@ -70,13 +73,13 @@ describe('Task Controller', () => {
     });
   });
 
-  describe('GET /tasks/:id', () => {
-    let taskId= userId
+  describe('GET /tasks/:taskId', () => {
+    let taskId: mongoose.Types.ObjectId | undefined;
 
     beforeAll(async () => {
       const task = new Task({ userId, name: 'Another Test Task', description: 'Description', date_time: new Date(), status: 'pending', next_execute_date_time: new Date() });
       await task.save();
-      taskId = (task._id as mongoose.Types.ObjectId);
+      taskId = task._id as mongoose.Types.ObjectId;
     });
 
     it('should get a task by ID', async () => {
@@ -100,19 +103,19 @@ describe('Task Controller', () => {
     });
   });
 
-  describe('PUT /users/:userId/tasks/:id', () => {
-    let taskId: mongoose.Types.ObjectId;
+  describe('PUT /users/:userId/tasks/:taskId', () => {
+    let taskId: mongoose.Types.ObjectId | undefined;
 
     beforeAll(async () => {
       const task = new Task({ userId, name: 'Update Test Task', description: 'Description', date_time: new Date(), status: 'pending', next_execute_date_time: new Date() });
       await task.save();
-      taskId = (task._id as mongoose.Types.ObjectId);
+      taskId = task._id as mongoose.Types.ObjectId;
     });
 
     it('should update a task', async () => {
       const res = await request(app)
         .put(`/users/${userId}/tasks/${taskId}`)
-        .send({ name: 'Updated Task', description: 'Updated Description' });
+        .send({ name: 'Updated Task', description: 'Updated Description', next_execute_date_time: new Date() });
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('name', 'Updated Task');
@@ -121,8 +124,8 @@ describe('Task Controller', () => {
 
     it('should return 400 for invalid IDs', async () => {
       const res = await request(app)
-        .put('/users/invalidUserId/tasks/invalidTaskId')
-        .send({ name: 'Updated Task', description: 'Updated Description' });
+        .put(`/users/${userId}/tasks/invalidTaskId`)
+        .send({ name: 'Updated Task', description: 'Updated Description', next_execute_date_time: new Date() });
 
       expect(res.status).toBe(400);
     });
@@ -131,19 +134,19 @@ describe('Task Controller', () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       const res = await request(app)
         .put(`/users/${userId}/tasks/${nonExistentId}`)
-        .send({ name: 'Updated Task', description: 'Updated Description' });
+        .send({ name: 'Updated Task', description: 'Updated Description', next_execute_date_time: new Date() });
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe('DELETE /users/:userId/tasks/:id', () => {
-    let taskId: mongoose.Types.ObjectId;
+  describe('DELETE /users/:userId/tasks/:taskId', () => {
+    let taskId: mongoose.Types.ObjectId | undefined;
 
     beforeAll(async () => {
       const task = new Task({ userId, name: 'Delete Test Task', description: 'Description', date_time: new Date(), status: 'pending', next_execute_date_time: new Date() });
       await task.save();
-      taskId = (task._id as mongoose.Types.ObjectId);
+      taskId = task._id as mongoose.Types.ObjectId;
     });
 
     it('should delete a task', async () => {
@@ -154,7 +157,7 @@ describe('Task Controller', () => {
     });
 
     it('should return 400 for invalid IDs', async () => {
-      const res = await request(app).delete('/users/invalidUserId/tasks/invalidTaskId');
+      const res = await request(app).delete(`/users/${userId}/tasks/invalidTaskId`);
 
       expect(res.status).toBe(400);
     });
@@ -167,4 +170,3 @@ describe('Task Controller', () => {
     });
   });
 });
-

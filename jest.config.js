@@ -1,8 +1,8 @@
 module.exports = {
-    testEnvironment: 'node',
-    testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
-    transform: {
-      '^.+\\.tsx?$': 'ts-jest',
-    },
-  };
-  
+  // testTimeout: 10000,
+  testEnvironment: 'node',
+  testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
+  transform: {
+    '^.+\\.tsx?$': 'ts-jest',
+  },
+};

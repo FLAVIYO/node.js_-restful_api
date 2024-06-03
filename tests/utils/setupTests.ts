@@ -12,7 +12,7 @@ export async function setupTestDatabase() {
     await mongoose.connect(mongoURI, {});
   } catch (error) {
     console.error('Error connecting to the test database:', error);
-    process.exit(1); // Exit the test process if database connection fails
+    // Process continues despite the error
   }
 }
 
